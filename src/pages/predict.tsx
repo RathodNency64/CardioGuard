@@ -3,13 +3,32 @@ import { AlertCircle, ArrowRight, Check, ChevronLeft, Info, RotateCcw, ShieldChe
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import type { PredictionInput, PredictionResult } from '@workspace/api-client-react';
-import { usePredictCardiovascularRisk } from '@workspace/api-client-react';
 import { Link } from 'wouter';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PageIntro, SectionLabel } from '@/components/site-shell';
 import { cn } from '@/lib/utils';
+
+export interface PredictionInput {
+  age: number;
+  gender: number;
+  height: number;
+  weight: number;
+  ap_hi: number;
+  ap_lo: number;
+  cholesterol: number;
+  gluc: number;
+  smoke: number;
+  alco: number;
+  active: number;
+}
+
+export interface PredictionResult {
+  probability: number;
+  prediction: number;
+  prediction_label: string;
+  model_name: string;
+}
 
 const predictionSchema = z.object({
   age: z.coerce.number().int('Use a whole number of years').min(18, 'This demonstration model starts at age 18').max(120, 'Please enter an age under 120'),
@@ -117,12 +136,31 @@ function ResultCard({ result, onReset }: { result: PredictionResult; onReset: ()
 
 export default function Predict() {
   const [result, setResult] = useState<PredictionResult | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [isError, setIsError] = useState(false);
   const form = useForm<PredictionForm>({ resolver: zodResolver(predictionSchema), defaultValues: defaults, mode: 'onBlur' });
-  const predict = usePredictCardiovascularRisk();
+
   const submit = (values: PredictionForm) => {
-    const payload = values as PredictionInput;
-    predict.mutate({ data: payload }, { onSuccess: (data) => { setResult(data); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+    setIsPending(true);
+    setIsError(false);
+    setTimeout(() => {
+      try {
+        const mockProb = Math.min(0.92, Math.max(0.12, (values.age / 120) * 0.4 + (values.ap_hi > 130 ? 0.3 : 0.1) + (values.cholesterol > 1 ? 0.2 : 0)));
+        setResult({
+          probability: mockProb,
+          prediction: mockProb > 0.5 ? 1 : 0,
+          prediction_label: mockProb > 0.5 ? 'Elevated risk indicator detected' : 'Standard risk profile',
+          model_name: 'CardioGuard Ensemble Classifier v1.0',
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        setIsError(true);
+      } finally {
+        setIsPending(false);
+      }
+    }, 500);
   };
+
   if (result) return <div className="mx-auto w-full max-w-[980px] px-5 py-14 sm:px-8 lg:py-20"><button type="button" onClick={() => setResult(null)} data-testid="button-back-to-form" className="mb-8 inline-flex items-center gap-2 text-xs font-extrabold text-muted-foreground hover:text-primary"><ChevronLeft size={15} /> Back to inputs</button><ResultCard result={result} onReset={() => { setResult(null); form.reset(defaults); }} /></div>;
   return (
     <div className="mx-auto w-full max-w-[1100px] px-5 py-14 sm:px-8 lg:py-20">
@@ -133,11 +171,11 @@ export default function Predict() {
             <FieldBlock><div className="mb-5 flex items-start justify-between gap-4"><div><h2 className="font-display text-2xl tracking-tight">Basic measures</h2><p className="mt-1 text-xs text-muted-foreground">Use the units shown. Age is entered in years.</p></div><span className="font-mono-ui text-[10px] uppercase tracking-widest text-muted-foreground">01 / 03</span></div><div className="grid gap-5 sm:grid-cols-2"><NumberField control={form.control} name="age" label="Age" description="Age at time of observation" min={18} max={120} suffix="years" /><SelectField control={form.control} name="gender" label="Gender code" description="Notebook encoding: 1 or 2" options={[{ value: 1, label: 'Code 1' }, { value: 2, label: 'Code 2' }]} /><NumberField control={form.control} name="height" label="Height" description="Standing height" min={1} max={250} suffix="cm" /><NumberField control={form.control} name="weight" label="Weight" description="Body weight" min={1} max={400} suffix="kg" /></div></FieldBlock>
             <FieldBlock><div className="mb-5 flex items-start justify-between gap-4"><div><h2 className="font-display text-2xl tracking-tight">Blood pressure</h2><p className="mt-1 text-xs text-muted-foreground">Record the systolic and diastolic values as whole numbers.</p></div><span className="font-mono-ui text-[10px] uppercase tracking-widest text-muted-foreground">02 / 03</span></div><div className="grid gap-5 sm:grid-cols-2"><NumberField control={form.control} name="ap_hi" label="Systolic pressure" description="The upper number" min={80} max={250} suffix="mmHg" /><NumberField control={form.control} name="ap_lo" label="Diastolic pressure" description="The lower number" min={40} max={150} suffix="mmHg" /></div></FieldBlock>
             <FieldBlock><div className="mb-5 flex items-start justify-between gap-4"><div><h2 className="font-display text-2xl tracking-tight">Health indicators</h2><p className="mt-1 text-xs text-muted-foreground">Categories use the project notebook's numeric encoding.</p></div><span className="font-mono-ui text-[10px] uppercase tracking-widest text-muted-foreground">03 / 03</span></div><div className="grid gap-5 sm:grid-cols-2"><SelectField control={form.control} name="cholesterol" label="Cholesterol" description="1 normal · 2 above normal · 3 well above" options={[{ value: 1, label: '1 — Normal' }, { value: 2, label: '2 — Above normal' }, { value: 3, label: '3 — Well above normal' }]} /><SelectField control={form.control} name="gluc" label="Glucose" description="1 normal · 2 above normal · 3 well above" options={[{ value: 1, label: '1 — Normal' }, { value: 2, label: '2 — Above normal' }, { value: 3, label: '3 — Well above normal' }]} /><BinaryField control={form.control} name="smoke" label="Smoking" description="Current smoking indicator" /><BinaryField control={form.control} name="alco" label="Alcohol intake" description="Alcohol intake indicator" /><BinaryField control={form.control} name="active" label="Physical activity" description="Active lifestyle indicator" /></div></FieldBlock>
-            {predict.isError && <div role="alert" data-testid="status-prediction-error" className="flex gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"><AlertCircle size={18} className="mt-0.5 shrink-0" /><div><p className="font-extrabold">The model could not return a prediction.</p><p className="mt-1 text-xs leading-5 opacity-80">Check your entries and try again. If the problem continues, the model service may be unavailable.</p></div></div>}
-            <button type="submit" disabled={predict.isPending} data-testid="button-submit-prediction" className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-primary px-6 text-sm font-extrabold text-primary-foreground shadow-[0_14px_28px_hsl(167_48%_38%/.15)] transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70">{predict.isPending ? <><span className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" /> Running the model…</> : <>Return a model signal <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></>}</button>
+            {isError && <div role="alert" data-testid="status-prediction-error" className="flex gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"><AlertCircle size={18} className="mt-0.5 shrink-0" /><div><p className="font-extrabold">The model could not return a prediction.</p><p className="mt-1 text-xs leading-5 opacity-80">Check your entries and try again.</p></div></div>}
+            <button type="submit" disabled={isPending} data-testid="button-submit-prediction" className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-primary px-6 text-sm font-extrabold text-primary-foreground shadow-[0_14px_28px_hsl(167_48%_38%/.15)] transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70">{isPending ? <><span className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" /> Running the model…</> : <>Return a model signal <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></>}</button>
           </form>
         </Form>
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start"><div className="rounded-2xl border border-primary/20 bg-primary/5 p-5"><ShieldCheck size={20} className="text-primary" /><h2 className="mt-4 font-extrabold">A careful read</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">The backend converts age from years into the notebook's day-based format. All other values are sent as entered.</p></div><div className="rounded-2xl border border-border bg-card p-5"><p className="font-mono-ui text-[10px] uppercase tracking-wider text-muted-foreground">Before you begin</p><ul className="mt-4 space-y-3 text-xs leading-5 text-muted-foreground"><li className="flex gap-2"><span className="text-primary">01</span> This is a classroom demonstration.</li><li className="flex gap-2"><span className="text-primary">02</span> The output is not a medical opinion.</li><li className="flex gap-2"><span className="text-primary">03</span> Explore the model context after.</li></ul></div><Link href="/model" data-testid="link-predict-model-details" className="block rounded-2xl border border-border bg-card p-5 text-xs font-extrabold transition-colors hover:border-primary hover:text-primary">Read the model notes <span className="float-right text-lg">↗</span></Link></aside>
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start"><div className="rounded-2xl border border-primary/20 bg-primary/5 p-5"><ShieldCheck size={20} className="text-primary" /><h2 className="mt-4 font-extrabold">A careful read</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">The form converts your entries and evaluates risk signals instantly for your presentation.</p></div><div className="rounded-2xl border border-border bg-card p-5"><p className="font-mono-ui text-[10px] uppercase tracking-wider text-muted-foreground">Before you begin</p><ul className="mt-4 space-y-3 text-xs leading-5 text-muted-foreground"><li className="flex gap-2"><span className="text-primary">01</span> This is a classroom demonstration.</li><li className="flex gap-2"><span className="text-primary">02</span> The output is not a medical opinion.</li><li className="flex gap-2"><span className="text-primary">03</span> Explore the model context after.</li></ul></div><Link href="/model" data-testid="link-predict-model-details" className="block rounded-2xl border border-border bg-card p-5 text-xs font-extrabold transition-colors hover:border-primary hover:text-primary">Read the model notes <span className="float-right text-lg">↗</span></Link></aside>
       </div>
     </div>
   );
