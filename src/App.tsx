@@ -26,7 +26,7 @@ function Router() {
     <RoutedErrorBoundary>
       <SiteShell>
         <Switch>
-          <Route path="/" component={Home} />
+          <Route path="/" component= {Home} />
           <Route path="/predict" component={Predict} />
           <Route path="/how-it-works" component={HowItWorks} />
           <Route path="/model" component={Model} />
@@ -47,7 +47,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <WouterRouter>
           <Router />
         </WouterRouter>
         <Toaster />
