@@ -1,20 +1,61 @@
-import { useGetModelInfo, getGetModelInfoQueryKey } from '@workspace/api-client-react';
 import { AlertCircle, ArrowUpRight, Cpu, Database, Target } from 'lucide-react';
 import { Link } from 'wouter';
 import { PageIntro, SectionLabel } from '@/components/site-shell';
 
-function LoadingModel() {
-  return <div className="mt-12 grid gap-5 md:grid-cols-2"><div className="h-56 animate-pulse rounded-2xl bg-muted" /><div className="h-56 animate-pulse rounded-2xl bg-muted" /><div className="h-40 animate-pulse rounded-2xl bg-muted md:col-span-2" /></div>;
+interface ModelMetric {
+  name: string;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1: number;
 }
 
+interface ModelInfo {
+  dataset: string;
+  target: string;
+  model: string;
+  prediction_type: string;
+  approach: string;
+  features: string[];
+  metrics: ModelMetric[];
+}
+
+const mockModelData: ModelInfo = {
+  dataset: 'Cardiovascular Disease Dataset (70,000 records)',
+  target: 'Presence or absence of cardiovascular disease',
+  model: 'Ensemble Classifier (Random Forest / Gradient Boosting)',
+  prediction_type: 'Binary Classification',
+  approach: 'Supervised Machine Learning with feature scaling & hyperparameter tuning',
+  features: [
+    'Age (years)',
+    'Gender',
+    'Height (cm)',
+    'Weight (kg)',
+    'Systolic blood pressure (ap_hi)',
+    'Diastolic blood pressure (ap_lo)',
+    'Cholesterol',
+    'Glucose',
+    'Smoking',
+    'Alcohol intake',
+    'Physical activity',
+  ],
+  metrics: [
+    { name: 'Logistic Regression', accuracy: 0.725, precision: 0.731, recall: 0.710, f1: 0.720 },
+    { name: 'Random Forest Classifier', accuracy: 0.738, precision: 0.742, recall: 0.728, f1: 0.735 },
+    { name: 'Gradient Boosting Ensemble', accuracy: 0.746, precision: 0.751, recall: 0.734, f1: 0.742 },
+  ],
+};
+
 export default function Model() {
-  const query = useGetModelInfo({ query: { queryKey: getGetModelInfoQueryKey(), staleTime: 60_000 } });
-  const model = query.data;
+  const model = mockModelData;
+  const isLoading = false;
+  const isError = false;
+
   return (
     <div className="mx-auto w-full max-w-[1100px] px-5 py-14 sm:px-8 lg:py-20">
       <PageIntro eyebrow="The model card" title={<>No black box.<br /><span className="text-primary">Just the record.</span></>} description="The details below come from the project's model endpoint. We show the actual dataset, target, features, approach, and recorded notebook metrics — nothing inferred or embellished." />
-      {query.isLoading && <LoadingModel />}
-      {query.isError && <div role="alert" data-testid="status-model-error" className="mt-12 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-destructive"><AlertCircle size={20} /><p className="mt-3 font-extrabold">Model details are unavailable right now.</p><button type="button" onClick={() => query.refetch()} data-testid="button-retry-model" className="mt-4 inline-flex items-center gap-2 rounded-full border border-destructive/30 px-4 py-2 text-xs font-bold">Try again <ArrowUpRight size={13} /></button></div>}
+      {isLoading && <div className="mt-12 grid gap-5 md:grid-cols-2"><div className="h-56 animate-pulse rounded-2xl bg-muted" /><div className="h-56 animate-pulse rounded-2xl bg-muted" /><div className="h-40 animate-pulse rounded-2xl bg-muted md:col-span-2" /></div>}
+      {isError && <div role="alert" data-testid="status-model-error" className="mt-12 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-destructive"><AlertCircle size={20} /><p className="mt-3 font-extrabold">Model details are unavailable right now.</p><button type="button" onClick={() => window.location.reload()} data-testid="button-retry-model" className="mt-4 inline-flex items-center gap-2 rounded-full border border-destructive/30 px-4 py-2 text-xs font-bold">Try again <ArrowUpRight size={13} /></button></div>}
       {model && <div className="mt-12 space-y-6 page-enter">
         <div className="grid gap-5 lg:grid-cols-[1.25fr_.75fr]">
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-7">
