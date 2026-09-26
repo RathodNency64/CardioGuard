@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CardioGuard"
+description = "An educational cardiovascular disease risk prediction app that connects a responsive React experience to a Flask API and the user's trained machine learning model."
+version = "1.0.0"
+id = "artifacts/cardioguard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20576
+
+[services.development]
+run = "pnpm --filter @workspace/cardioguard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cardioguard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cardioguard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20576"
+BASE_PATH = "/"
