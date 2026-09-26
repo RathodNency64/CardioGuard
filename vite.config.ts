@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@workspace/api-client-react': path.resolve(__dirname, './src/api'), // Change './src/api' to match your actual folder (e.g. './src/lib', './src/types')
+      '@workspace/api-client-react': path.resolve(__dirname, './shared'), // Points to the root shared folder
     },
   },
   build: {
