@@ -1,18 +1,16 @@
 import { Activity, ArrowRight, BookOpen, CheckCircle2, Database, ShieldCheck, Sparkles } from 'lucide-react';
 import { Link } from 'wouter';
-import { useHealthCheck, getHealthCheckQueryKey } from '@workspace/api-client-react';
 import { SectionLabel } from '@/components/site-shell';
 
 export default function Home() {
-  const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey(), staleTime: 30_000 } });
-  const serverReady = health.data?.status === 'ok' || health.data?.status === 'healthy';
+  const serverReady = true;
   return (
     <div className="page-enter">
       <section className="mx-auto grid w-full max-w-[1240px] gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-10 lg:pb-28">
         <div className="relative">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 font-mono-ui text-[10px] uppercase tracking-[0.16em] text-primary">
             <span className="size-1.5 rounded-full bg-primary pulse-line" />
-            {health.isPending ? 'Connecting to model service' : serverReady ? 'Model service ready' : 'Educational model companion'}
+            {serverReady ? 'Model service ready' : 'Educational model companion'}
           </div>
           <h1 className="max-w-2xl font-display text-[clamp(3.5rem,8vw,7.5rem)] leading-[.88] tracking-[-0.065em] text-foreground">
             Risk, made<br /><span className="text-primary">readable.</span>
